@@ -2415,7 +2415,7 @@ rvWeapon::AmmoRequired
 ================
 */
 int	rvWeapon::AmmoRequired( void ) const {
-	return ammoRequired;
+	return 0;
 }
 
 /*

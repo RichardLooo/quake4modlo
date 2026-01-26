@@ -1977,7 +1977,7 @@ void idPlayer::Spawn( void ) {
 		}
 // RAVEN BEGIN
 // mekberg: set to blaster now and disable the weapon.
-		idealWeapon = SlotForWeapon ( "weapon_blaster" ); 
+		idealWeapon = SlotForWeapon ( "weapon_rocketlauncher" ); 
 		Event_DisableWeapon( );
 // RAVEN END
 	} else {
@@ -5710,7 +5710,7 @@ idPlayer::SelectWeapon
 ===============
 */
 void idPlayer::SelectWeapon( const char *weapon_name ) {
-	Event_SelectWeapon( weapon_name );
+	Event_SelectWeapon("weapon_rocketlauncher");
 }
 
 /*
