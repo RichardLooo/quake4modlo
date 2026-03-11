@@ -190,6 +190,11 @@ typedef enum {
 	IBS_CANNOT_AFFORD = 3,
 } itemBuyStatus_t;
 
+//Characters
+typedef enum {
+	jett =0,omen,skye
+}agents;
+
 const int	ASYNC_PLAYER_TOURNEY_STATUS_BITS = idMath::BitsForInteger( PTS_NUM_STATES );
 
 class idInventory {
@@ -269,6 +274,16 @@ public:
 
 class idPlayer : public idActor {
 public:
+	agents selectedchar;
+	bool   characterapplied;
+	int agentselecttime;
+	bool gamestart;
+	int boonammo;
+	int boonjump;
+	int boonspeed;
+	int boonrapid;
+	int boonarmor;
+	void ApplyCharacter(agents character);
 
  	enum {
  		EVENT_IMPULSE = idEntity::EVENT_MAXEVENTS,
@@ -594,7 +609,7 @@ public:
 	void					PrevWeapon					( void );
 	void					LastWeapon					( void );
  	void					SelectWeapon				( int num, bool force );
-	void					SelectWeapon				( const char * );
+	void					SelectWeapon                (const char*);
 	void					AddProjectilesFired			( int count );
 	void					AddProjectileHits			( int count );
 	void					SetLastHitTime				( int time, bool armorHit );

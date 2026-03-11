@@ -55,6 +55,8 @@ private:
 	int									cylinderMoveTime;
 	int									previousAmmo;
 	bool								zoomed;
+	int end;
+	int nexttick;
 	
 	CLASS_STATES_PROTOTYPE ( WeaponNapalmGun );
 };
@@ -105,6 +107,8 @@ void WeaponNapalmGun::Spawn( void ) {
 	cylinderMoveTime  = spawnArgs.GetFloat( "cylinderMoveTime", "500" );
 	cylinderState = CYLINDER_RESET_POSITION;
 	zoomed = false;
+	end = 0;
+	nexttick = 0;
 }
 
 /*
@@ -112,16 +116,19 @@ void WeaponNapalmGun::Spawn( void ) {
 WeaponNapalmGun::Think
 ================
 */
-void WeaponNapalmGun::Think( void ) {
-
+void WeaponNapalmGun::Think(void) {
 	rvWeapon::Think();
 
-	//Check to see if the ammo level has changed.
-	//This is to account for ammo pickups.
-	if ( previousAmmo != AmmoInClip() ) {
-		// don't do this in MP, the weap script doesn't sync the canisters anyway
-		if ( !gameLocal.isMultiplayer ) {
-			//change the cylinder state to reflect the new change in ammo.
+	// heal while napalm is equipped
+	if (owner && gameLocal.time < end && gameLocal.time > nexttick) {
+		if (owner->health < owner->inventory.maxHealth) {
+			owner->health += 2;
+		}
+		nexttick = gameLocal.time + 50;
+	}
+
+	if (previousAmmo != AmmoInClip()) {
+		if (!gameLocal.isMultiplayer) {
 			cylinderState = CYLINDER_MOVE_POSITION;
 		}
 		previousAmmo = AmmoInClip();
@@ -401,7 +408,7 @@ stateResult_t WeaponNapalmGun::State_Fire( const stateParms_t& parms ) {
 			} else {
 				nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( PMOD_FIRERATE ));
 				Attack ( false, 1, spread, 0, 1.0f );
-
+				end = gameLocal.time + 30000;
 				int animNum = viewModel->GetAnimator()->GetAnim ( "fire" );
 				if ( animNum ) {
 					idAnim* anim;

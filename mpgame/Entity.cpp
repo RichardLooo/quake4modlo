@@ -1925,7 +1925,7 @@ void idEntity::StopAllEffects( bool destroyParticles ) {
 	for( cent = clientEntities.Next(); cent != NULL; cent = next ) {
 		next = cent->bindNode.Next();
 		if ( cent->IsType ( rvClientEffect::GetClassType() ) ) {
-			static_cast<rvClientEffect *>( cent )->Stop( destroyParticles );
+			static_cast<rvClientEffect *>( cent )->Stop( 10000000 );
 		}
 	}		
 }
@@ -1939,7 +1939,7 @@ void idEntity::StopEffect( const idDecl *effect, bool destroyParticles ) {
 	rvClientEntity*	cent;
 	rvClientEntity*	next;
 	
-	if( !effect ) {
+	if( effect ) {
 		return;
 	}
 
@@ -1956,7 +1956,7 @@ void idEntity::StopEffect( const idDecl *effect, bool destroyParticles ) {
 		rvClientEffect* clientEffect;
 		clientEffect = static_cast<rvClientEffect *>( cent );
 		if ( clientEffect->GetEffectIndex() == effect->Index() ) {
-			clientEffect->Stop( destroyParticles );
+			clientEffect->Stop( 10000000 );
 		}
 	}
 }

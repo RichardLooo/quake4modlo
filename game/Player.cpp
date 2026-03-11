@@ -193,6 +193,20 @@ const idVec4 marineHitscanTint( 0.69f, 1.0f, 0.4f, 1.0f );
 const idVec4 stroggHitscanTint( 1.0f, 0.5f, 0.0f, 1.0f );
 const idVec4 defaultHitscanTint( 0.4f, 1.0f, 0.4f, 1.0f );
 
+struct characterdef {
+	const char* name;
+	int health;
+	int armor;
+	const char* weapons[5];
+	int gunammo;
+};
+
+static characterdef agent[]{
+	{"Jett", 75,  25, {"weapon_blaster", "weapon_rocketlauncher", "weapon_grenadelauncher", "weapon_railgun", NULL}, 300},
+	{"Omen", 50,  50, {"weapon_blaster", "weapon_shotgun", "weapon_dmg", "weapon_nailgun", NULL}, 50},
+	{"Skye", 25,  75, {"weapon_blaster", "weapon_lightninggun", "weapon_napalmgun", "weapon_railgun", NULL}, 50},
+};
+
 /*
 ==============
 idInventory::Clear
@@ -1057,11 +1071,10 @@ int idInventory::HasAmmo( const char *weapon_classname ) {
 idInventory::UseAmmo
 ===============
 */
-bool idInventory::UseAmmo( int index, int amount ) {
-	if ( !HasAmmo( index, amount ) ) {
+bool idInventory::UseAmmo(int index, int amount) {
+	if (!HasAmmo(index, amount)) {
 		return false;
 	}
-
 	// take an ammo away if not infinite
 	if ( ammo[ index ] >= 0 ) {
 		ammo[ index ] -= amount;
@@ -1815,7 +1828,11 @@ void idPlayer::Spawn( void ) {
 
 	// allow thinking during cinematics
 	cinematic = true;
-
+	gamestart = false;
+	boonjump = 0;
+	boonspeed = 0;
+	boonrapid = 0;
+	boonarmor = 0;
 	if ( gameLocal.isMultiplayer ) {
 		// always start in spectating state waiting to be spawned in
 		// do this before SetClipModel to get the right bounding box
@@ -1977,7 +1994,7 @@ void idPlayer::Spawn( void ) {
 		}
 // RAVEN BEGIN
 // mekberg: set to blaster now and disable the weapon.
-		idealWeapon = SlotForWeapon ( "weapon_rocketlauncher" ); 
+		idealWeapon = SlotForWeapon("weapon_blaster");
 		Event_DisableWeapon( );
 // RAVEN END
 	} else {
@@ -2749,6 +2766,10 @@ bool idPlayer::SelectSpawnPoint( idVec3 &origin, idAngles &angles ) {
 	origin[2] += 4.0f + CM_BOX_EPSILON;		// move up to make sure the player is at least an epsilon above the floor
 	angles = spot->GetPhysics()->GetAxis().ToAngles();
 
+
+
+
+
 	return true;
 }
 
@@ -2963,6 +2984,11 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 
 	lastImpulsePlayer = NULL;
 	lastImpulseTime = 0;
+	characterapplied = false;
+	if (g_skill.GetInteger() == 0 && !gameLocal.isMultiplayer) {
+		gamestart = true;
+		gameLocal.Printf("Please select your agent. I=Jett O=Omen P=Skye\n");
+	}
 }
 
 /*
@@ -2997,6 +3023,13 @@ void idPlayer::RestorePersistantInfo( void ) {
 
 	inventory.RestoreInventory( this, spawnArgs );
  	health = spawnArgs.GetInt( "health", "100" );
+	int charIndex = agentpicked.GetInteger();
+	if (charIndex >= 0 && charIndex <= 2) {
+		inventory.maxHealth = agent[charIndex].health;
+		health = agent[charIndex].health;
+		inventory.maxarmor = agent[charIndex].armor;
+		inventory.armor = agent[charIndex].armor;
+	}
  	if ( !gameLocal.isClient ) {
  		idealWeapon = spawnArgs.GetInt( "current_weapon", "0" );
  	}
@@ -3981,7 +4014,7 @@ void idPlayer::FireWeapon( void ) {
 		return;
 	}
 
-	if ( !hiddenWeapon && weapon->IsReady() ) {
+	if (!hiddenWeapon && (weapon->IsReady() || gameLocal.time < boonrapid)) {
 		// cheap hack so in MP the LG isn't allowed to fire in the short lapse while it goes from Fire -> Idle before changing to another weapon
 		// this gimps the weapon a lil bit but is consistent with the visual feedback clients are getting since 1.0
 		bool noFireWhileSwitching = false;
@@ -4363,7 +4396,9 @@ float idPlayer::PowerUpModifier( int type ) {
 			}
 		}
 	}
-
+	if (boonrapid && gameLocal.time < boonrapid) {
+		if (type == PMOD_FIRERATE) mod *= 0.25f;
+	}
 	return mod;
 }
 
@@ -5710,7 +5745,7 @@ idPlayer::SelectWeapon
 ===============
 */
 void idPlayer::SelectWeapon( const char *weapon_name ) {
-	Event_SelectWeapon("weapon_rocketlauncher");
+	Event_SelectWeapon(weapon_name);
 }
 
 /*
@@ -8454,7 +8489,29 @@ void idPlayer::PerformImpulse( int impulse ) {
 		msg.WriteBits( impulse, IMPULSE_NUMBER_OF_BITS );
 		ClientSendEvent( EVENT_IMPULSE, &msg );
 	}
-
+	if (g_skill.GetInteger() == 0 && !gameLocal.isMultiplayer && gamestart) {
+		if (impulse == 76) {
+			agentpicked.SetInteger(0);
+			characterapplied = false;
+			gamestart = false;
+			gameLocal.Printf("Agent selected: Jett\n");
+			return;
+		}
+		else if (impulse == 75) {
+			agentpicked.SetInteger(1);
+			characterapplied = false;
+			gamestart = false;
+			gameLocal.Printf("Agent selected: Omen\n");
+			return;
+		}
+		else if (impulse == 72) {
+			agentpicked.SetInteger(2);
+			characterapplied = false;
+			gamestart = false;
+			gameLocal.Printf("Agent selected: Skye\n");
+			return;
+		}
+	}
 	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) {
 		SelectWeapon( impulse, false );
 		return;
@@ -8578,11 +8635,8 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_105:	AttemptToBuyItem( "weapon_rocketlauncher" );		break;
 		case IMPULSE_106:	AttemptToBuyItem( "weapon_railgun" );				break;
 		case IMPULSE_107:	AttemptToBuyItem( "weapon_lightninggun" );			break;
-		case IMPULSE_108:	break; // Unused
 		case IMPULSE_109:	AttemptToBuyItem( "weapon_napalmgun" );				break;
 		case IMPULSE_110:	/* AttemptToBuyItem( "weapon_dmg" );*/				break;
-		case IMPULSE_111:	break; // Unused
-		case IMPULSE_112:	break; // Unused
 		case IMPULSE_113:	break; // Unused
 		case IMPULSE_114:	break; // Unused
 		case IMPULSE_115:	break; // Unused
@@ -8747,6 +8801,7 @@ void idPlayer::AdjustSpeed( void ) {
  	} else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) && ( usercmd.upmove >= 0 ) ) {
 		bobFrac = 1.0f;
 		speed = pm_speed.GetFloat();
+		if (gameLocal.time < boonspeed) speed *= 1.75f;
 	} else {
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
@@ -8966,6 +9021,7 @@ void idPlayer::Move( void ) {
 	// set physics variables
 	physicsObj.SetMaxStepHeight( pm_stepsize.GetFloat() );
 	physicsObj.SetMaxJumpHeight( pm_jumpheight.GetFloat() );
+	if (gameLocal.time < boonjump) physicsObj.SetMaxJumpHeight(pm_jumpheight.GetFloat() * 2.5f);
 
 	if ( noclip ) {
 		physicsObj.SetContents( 0 );
@@ -9283,8 +9339,11 @@ Called every tic for each player
 ==============
 */
 void idPlayer::Think( void ) {
+	if (!characterapplied && health > 0) {
+		characterapplied = true;
+		ApplyCharacter((agents)agentpicked.GetInteger());
+	}
 	renderEntity_t *headRenderEnt;
- 
 	if ( talkingNPC ) {
 		if ( !talkingNPC.IsValid() ) {
 			talkingNPC = NULL;
@@ -14053,6 +14112,75 @@ void idPlayer::ResetCash()
 	ClampCash( minCash, maxCash );
 }
 
+void idPlayer::ApplyCharacter(agents characters) {
+
+	if (g_skill.GetInteger() == 1) {
+		for (int i = 0; i < MAX_WEAPONS; i++) {
+			inventory.weapons &= ~(1 << i);
+		}
+		int blasterSlot = SlotForWeapon("weapon_blaster");
+		if (blasterSlot != -1) {
+			inventory.weapons |= (1 << blasterSlot);
+			SelectWeapon(blasterSlot, true);
+		}
+		return;
+	}
+	int index = (int)characters;
+	if (index < 0 || index > 2) return;
+
+	characterdef& c = agent[(int)characters];
+
+	// set health and armor
+	inventory.maxHealth = c.health;
+	health = c.health;
+	inventory.maxarmor = c.armor;
+	inventory.armor = c.armor;
+
+	// Clear current weapons and ammo
+	for (int i = 0; i < MAX_WEAPONS; i++) {
+		inventory.weapons &= ~(1 << i);
+	}
+	idealWeapon = 0;
+	currentWeapon = 0;
+	memset(inventory.ammo, 0, sizeof(inventory.ammo));
+
+	// Give weapons in the list
+	for (int i = 0; i < 5; i++) {
+		if (c.weapons[i]) {
+			gameLocal.Printf("Giving weapon: %s\n", c.weapons[i]);
+			Give("weapon", c.weapons[i]);
+		}
+	}
+
+	int slot = SlotForWeapon(c.weapons[0]);
+	if (slot != -1) {
+		idealWeapon = slot;
+	}
+	Event_RefillAmmo();
+
+	for (int i = 1; i < 5; i++) {
+		if (c.weapons[i]) {
+			int wslot = SlotForWeapon(c.weapons[i]);
+			if (wslot != -1) {
+				int ammoIndex = inventory.AmmoIndexForWeaponIndex(wslot);
+				if (ammoIndex >= 0) {
+					inventory.ammo[ammoIndex] = c.gunammo;
+				}
+			}
+		}
+	}
+
+	if (c.weapons[1]) {
+		int slot2 = SlotForWeapon(c.weapons[1]);
+		if (slot2 != -1) {
+			int ammoIndex = inventory.AmmoIndexForWeaponIndex(slot2);
+			if (ammoIndex >= 0) {
+				inventory.ammo[ammoIndex] = c.gunammo;
+			}
+		}
+	}
+	gameLocal.Printf("Character: %s | HP: %d | Armor: %d\n", c.name, c.health, c.armor);
+}
 /**
  * Checks to see if the player can accept this item in their inventory
  *

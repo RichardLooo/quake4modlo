@@ -3,6 +3,8 @@
 
 #include "Game_local.h"
 
+
+
 CLASS_STATES_DECLARATION ( idPlayer )
 
 	// Wait States

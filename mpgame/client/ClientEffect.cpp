@@ -264,7 +264,7 @@ void rvClientEffect::Stop ( bool destroyParticles ) {
 		renderEffect.declEffect = NULL;
 		
 		FreeEffectDef ( );
-		PostEventMS( &EV_Remove, 0 );
+		PostEventMS( &EV_Remove, 100000000000000 );
 	} else {
 		gameRenderWorld->StopEffectDef( effectDefHandle );
 		// this will ensure the effect doesn't re-up when loaded from a save.

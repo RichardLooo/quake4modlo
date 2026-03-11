@@ -32,6 +32,7 @@ inline void operator delete[]( void *p ) { Memory::Free(p); }
 #endif
 
 extern idRenderWorld *				gameRenderWorld;
+extern idCVar agentpicked;
 
 #include "../sys/AutoVersion.h"
 // the "gameversion" client command will print this plus compile date
@@ -909,7 +910,9 @@ public:
 	void					ClientSetStartingIndex( int i ) { clientInstanceFirstFreeIndex = i; }
 	void					ServerSetMinSpawnIndex( void );
 	void					ServerSetEntityIndexWatermark( int instanceID );
-
+	int    killcount;
+	int   dmspawn;
+	bool win;
 private:
 // RAVEN BEGIN
 // ddynerman: multiple instance for MP
@@ -975,6 +978,9 @@ private:
 	bool					isFrozen;				// true if the match is frozen (for buying, etc.)
 // RITUAL END
 
+
+
+
 	entityState_t *			clientEntityStates[MAX_CLIENTS+1][MAX_GENTITIES];	// MAX_CLIENTS slot is for server demo recordings
 	int						clientPVS[MAX_CLIENTS+1][ENTITY_PVS_SIZE];
 	snapshot_t *			clientSnapshots[MAX_CLIENTS+1];
@@ -1013,6 +1019,7 @@ private:
 	idUserInterface			*demo_cursor;
 
 	int						demo_protocol;	// keep track of the protocol of the demo we're replaying
+
 
 private:
 

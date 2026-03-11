@@ -2509,6 +2509,86 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 				}
 			}
 			Killed( inflictor, attacker, damage, dir, location );
+			if (oldHealth > 0 && !IsType(idPlayer::GetClassType()) && attacker && attacker->IsType(idPlayer::GetClassType())) {
+				gameLocal.killcount++;
+				gameLocal.Printf("Kills: %d/5\n", gameLocal.killcount);
+
+				if (gameLocal.killcount % 2 == 0) {
+					idPlayer* p = static_cast<idPlayer*>(attacker);
+					int boon = gameLocal.random.RandomInt(5);
+					switch (boon) {
+					case 0:
+						p->health = p->inventory.maxHealth;
+						gameLocal.Printf("BOON: Full Heal!\n");
+						break;
+					case 1:
+						p->inventory.armor = p->inventory.maxarmor;
+						gameLocal.Printf("BOON: Full Armor!\n");
+						break;
+					case 2:
+						p->boonspeed = gameLocal.time + 5000;
+						gameLocal.Printf("BOON: Speed Boost!\n");
+						break;
+					case 3:
+						p->boonjump = gameLocal.time + 5000;
+						gameLocal.Printf("BOON: Jump Boost!\n");
+						break;
+					case 4:
+						p->boonrapid = gameLocal.time + 5000;
+						gameLocal.Printf("BOON: Rapid Fire!\n");
+						break;
+					}
+				}
+
+				idPlayer* player = static_cast<idPlayer*>(attacker);
+				if (gameLocal.killcount >= 5) {
+					gameLocal.Printf("Big dubs!\n");
+					gameLocal.killcount = 0;
+					gameLocal.win = true;
+				}
+				else if (g_skill.GetInteger() == 1) {
+					idPlayer* player = static_cast<idPlayer*>(attacker);
+
+					const char* weapons[] = {
+						"weapon_shotgun",
+						"weapon_railgun",
+						"weapon_lightninggun",
+						"weapon_rocketlauncher",
+						"weapon_darkmattergun"
+						"weapon_hyperblaster"
+					};
+					const char* ammoTypes[] = {
+						"ammo_shotgun",
+						"ammo_railgun",
+						"ammo_lightninggun",
+						"ammo_rocketlauncher",
+						"ammo_dmg"
+						"ammo_hyperblaster"
+					};
+					int numWeapons = 6;
+
+					int currentSlot = player->GetCurrentWeapon();
+					player->inventory.weapons &= ~(1 << currentSlot);
+
+					if (gameLocal.killcount == 4) {
+						int newSlot = player->SlotForWeapon("weapon_blaster");
+						if (newSlot != -1) {
+							player->inventory.weapons |= (1 << newSlot);
+							player->SelectWeapon(newSlot, true);
+						}
+					}
+					else {
+						int randomIndex = gameLocal.random.RandomInt(numWeapons);
+						int newSlot = player->SlotForWeapon(weapons[randomIndex]);
+						if (newSlot != -1) {
+							player->inventory.weapons |= (1 << newSlot);
+							player->Give(ammoTypes[randomIndex], "200", false);
+							player->SelectWeapon(newSlot, true);
+						}
+					}
+				}
+			}
+
 			gibbed = saveGibbed;
 			if ( health < -20 )
 			{

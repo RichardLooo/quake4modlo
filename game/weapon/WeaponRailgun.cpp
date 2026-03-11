@@ -31,6 +31,7 @@ private:
 	stateResult_t		State_Reload	( const stateParms_t& parms );
 
 	void				Event_RestoreHum	( void );
+	int third;
 
 	CLASS_STATES_PROTOTYPE ( rvWeaponRailgun );
 };
@@ -53,7 +54,9 @@ rvWeaponRailgun::Spawn
 ================
 */
 void rvWeaponRailgun::Spawn ( void ) {
-	SetState ( "Raise", 0 );	
+	SetState ( "Raise", 0 );
+	third = 0;
+
 }
 
 /*
@@ -185,11 +188,23 @@ stateResult_t rvWeaponRailgun::State_Fire ( const stateParms_t& parms ) {
 		STAGE_WAIT,
 	};	
 	switch ( parms.stage ) {
-		case STAGE_INIT:
-			nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( PMOD_FIRERATE ));
-			Attack ( false, 1, spread, 0, 1.0f );
-			PlayAnim ( ANIMCHANNEL_ALL, "fire", 0 );	
-			return SRESULT_STAGE ( STAGE_WAIT );
+	case STAGE_INIT:
+		nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier(PMOD_FIRERATE));
+		third++;
+		if (third >= 3) {
+			Attack(false, 5, 3.0f, 0, 1.0f);
+			third = 0;
+		}
+		else {
+			if (wsfl.zoom) {
+				Attack(false, 1, spread, 0, 1.0f);
+			}
+			else {
+				Attack(false, 1, 25.0f, 0, 1.0f);
+			}
+		}
+		PlayAnim(ANIMCHANNEL_ALL, "fire", 0);
+		return SRESULT_STAGE(STAGE_WAIT);
 	
 		case STAGE_WAIT:		
 			if ( ( gameLocal.isMultiplayer && gameLocal.time >= nextAttackTime ) || 

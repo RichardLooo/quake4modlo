@@ -45,6 +45,7 @@ idCVarHelp *				idCVarHelp::staticCVarHelpsTail = NULL;
 // RAVEN END
 
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL|CVAR_SYSTEM, "force generic platform independent SIMD" );
+idCVar agentpicked("agentpicked", "0", CVAR_GAME | CVAR_INTEGER, "Selected Charachter: 0=Jett, 1=Omen, 2=Skye");
 
 #endif
 
@@ -345,6 +346,9 @@ void idGameLocal::Clear( void ) {
 	entityDefBits = 0;
 
 	nextGibTime = 0;
+	killcount = 0;
+	dmspawn = time + 5000;
+	win = false;
 // RITUAL BEGIN
 // squirrel: added DeadZone multiplayer mode
 	unFreezeTime = 0;
@@ -1498,8 +1502,10 @@ void idGameLocal::LocalMapRestart( int instance ) {
 	int i, latchSpawnCount;
 
 	Printf( "----------- Game Map Restart (%s) ------------\n", instance == -1 ? "all instances" : va( "instance %d", instance ) );
-
-	// client always respawns everything, so make sure it picks up the right map entities
+	Printf("RESETTING GAME STATE\n");
+	killcount = 0;
+	dmspawn = 999999999;
+	win = false;
 	if( instance == -1 || isClient ) {
 		memset( isMapEntity, 0, sizeof(bool) * MAX_GENTITIES );
 	} else {
@@ -3471,7 +3477,28 @@ idGameLocal::RunFrame
 	assert( !isClient );
 
 	player = GetLocalPlayer();
-
+	if (player && !isMultiplayer && player->health > 0) {
+		if (dmspawn == 999999999) {
+			dmspawn = time + 5000;
+		}
+		if (time > dmspawn) {
+			idEntity* spawnPoint = FindEntityUsingDef(NULL, "info_player_start");
+			if (spawnPoint) {
+				gameLocal.Printf("spawning mob!\n");
+				idDict args;
+				args.Set("classname", "monster_grunt");
+				args.SetVector("origin", spawnPoint->GetPhysics()->GetOrigin());
+				SpawnEntityDef(args);
+			}
+			dmspawn = time + 5000;
+		}
+		if (win) {
+			win = false;
+			killcount = 0;
+			dmspawn = 5000;
+			player->health = 0;
+		}
+	}
 	if ( !isMultiplayer && g_stopTime.GetBool() ) {
 
 		// set the user commands for this frame

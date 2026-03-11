@@ -19,6 +19,7 @@ public:
 	void					PreSave					( void );
 	void					PostSave				( void );
 
+
 #ifdef _XENON
 	virtual bool		AllowAutoAim			( void ) const { return false; }
 #endif
@@ -395,7 +396,7 @@ public :
 	void					Restore			( idRestoreGame *savefile );
 
 	virtual void			Think			( void );
-
+	virtual bool    Collide(const trace_t& collision, const idVec3& velocity, bool& hitTeleporter);
 protected:
 
 	int					nextDamageTime;
@@ -411,7 +412,6 @@ rvDarkMatterProjectile::rvDarkMatterProjectile
 ================
 */
 rvDarkMatterProjectile::rvDarkMatterProjectile ( void ) {
-	radiusDamageDef = NULL;
 }
 
 /*
@@ -429,7 +429,6 @@ rvDarkMatterProjectile::Spawn
 */
 void rvDarkMatterProjectile::Spawn ( void ) {
 	nextDamageTime  = 0;
-	radiusDamageDef = gameLocal.FindEntityDefDict ( spawnArgs.GetString ( "def_radius_damage" ) );
 }
 
 /*
@@ -448,8 +447,6 @@ rvDarkMatterProjectile::Restore
 */
 void rvDarkMatterProjectile::Restore ( idRestoreGame *savefile ) {
 	savefile->ReadInt ( nextDamageTime );
-	
-	radiusDamageDef = gameLocal.FindEntityDefDict ( spawnArgs.GetString ( "def_radius_damage" ) );
 }
 
 /*
@@ -461,10 +458,15 @@ void rvDarkMatterProjectile::Think ( void ) {
 	physicsObj.SetClipMask( MASK_DMGSOLID );
 	idProjectile::Think ( );
 
-	if ( gameLocal.time > nextDamageTime ) {
-		gameLocal.RadiusDamage ( GetPhysics()->GetOrigin(), this, owner, owner, NULL, spawnArgs.GetString( "def_radius_damage" ), 1.0f, &hitCount );
-		nextDamageTime = gameLocal.time + SEC2MS ( spawnArgs.GetFloat ( "damageRate", ".05" ) );	
-	}
+//removed damage
 }
 
+//the blind
 
+bool rvDarkMatterProjectile::Collide(const trace_t& collision, const idVec3& velocity, bool& hitTeleporter) {
+	idPlayer* player = dynamic_cast<idPlayer*>(gameLocal.GetLocalPlayer());
+	if (player) {
+		player->playerView.Flash(idVec4(0.0f, 0.0f, 0.0f, 1.0f), 1000);
+	}
+	return idProjectile::Collide(collision, velocity, hitTeleporter);
+}

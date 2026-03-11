@@ -844,6 +844,12 @@ stateResult_t rvWeaponLightningGun::State_Fire( const stateParms_t& parms ) {
 					owner->playerView.SetShakeParms( MS2SEC(gameLocal.GetTime() + 500), 2.0f );
 				}
 			}
+			if (gameLocal.time % 500 < 16) {
+				if (owner->health < owner->inventory.maxHealth) {
+					owner->health += 2;
+				}
+			}
+
 			return SRESULT_WAIT;
 						
 		case STAGE_DONE:

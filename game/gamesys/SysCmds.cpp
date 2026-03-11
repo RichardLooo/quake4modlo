@@ -3046,6 +3046,71 @@ Let the system know about all of our commands
 so it can perform tab completion
 =================
 */
+void selectagent(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player)return;
+	if (args.Argc() < 2) {
+		gameLocal.Printf("Usage: selectchar <0-2>\n0=Jett, 1=Omen, 2=Skye\n");
+		return;
+	}
+	int index = atoi(args.Argv(1));
+	if (index < 0 || index > 2) {
+		gameLocal.Printf("Invalid Character, Please use 0=Jett, 1=Omen, 2=Skye");
+		return;
+	}
+	agentpicked.SetInteger(index);
+	player->characterapplied = false;
+	gameLocal.Printf("Character Set. Respawn to apply.");
+}
+
+
+
+
+void CmdBoonheal(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	player->health = player->inventory.maxHealth;
+	gameLocal.Printf("Boon: Healed to full!\n");
+}
+
+void CmdBoonjump(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	player->boonjump = gameLocal.time + 5000;
+	gameLocal.Printf("Boon: Jump Boost for 5 seconds!\n");
+}
+
+void CmdBoonspeed(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	player->boonspeed = gameLocal.time + 5000;
+	gameLocal.Printf("Boon: Speed Boost for 5 seconds!\n");
+	gameLocal.Printf("boonspeed set to %d, current time %d\n", player->boonspeed, gameLocal.time);
+
+}
+
+void CmdBoonrapid(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	player->boonrapid = gameLocal.time + 5000;
+	gameLocal.Printf("Boon: Rapid Fire for 5 seconds!\n");
+	gameLocal.Printf("boonrapid set to %d, current time %d\n", player->boonrapid, gameLocal.time);
+
+}
+
+void CmdBoonarmor(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (!player) return;
+	player->inventory.armor = player->inventory.maxarmor;
+	gameLocal.Printf("Boon: Armor restored!\n");
+}
+
+
+
+
+
+
+
 void idGameLocal::InitConsoleCommands( void ) {
 // RAVEN BEGIN
 // jscott: typeinfo gone - didn't work, it was unfinished
@@ -3053,6 +3118,12 @@ void idGameLocal::InitConsoleCommands( void ) {
 //	cmdSystem->AddCommand( "writeGameState",		WriteGameState_f,			CMD_FL_GAME,				"write game state" );
 //	cmdSystem->AddCommand( "testSaveGame",			TestSaveGame_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"test a save game for a level" );
 // RAVEN END
+	cmdSystem->AddCommand("boonheal", CmdBoonheal, CMD_FL_GAME, "Heal to full");
+	cmdSystem->AddCommand("boonjump", CmdBoonjump, CMD_FL_GAME, "Jump boost for 5 sec");
+	cmdSystem->AddCommand("boonspeed", CmdBoonspeed, CMD_FL_GAME, "Speed boost for 5 sec");
+	cmdSystem->AddCommand("boonrapid", CmdBoonrapid, CMD_FL_GAME, "Rapid fire for 5 sec");
+	cmdSystem->AddCommand("boonarmor", CmdBoonarmor, CMD_FL_GAME, "Unlimited armor for 5 sec");
+	cmdSystem->AddCommand("selectchar", selectagent, CMD_FL_GAME, "Select character: 0=Jett, 1=Omen, 2=Skye");
 	cmdSystem->AddCommand( "game_memory",			idClass::DisplayInfo_f,		CMD_FL_GAME,				"displays game class info" );
 	cmdSystem->AddCommand( "listClasses",			idClass::ListClasses_f,		CMD_FL_GAME,				"lists game classes" );
 	cmdSystem->AddCommand( "listThreads",			idThread::ListThreads_f,	CMD_FL_GAME|CMD_FL_CHEAT,	"lists script threads" );

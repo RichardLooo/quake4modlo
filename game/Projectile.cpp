@@ -453,7 +453,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
 			RunPhysics();
-			PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
+			PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "150000" ) );
 		} else if ( spawnArgs.GetBool( "detonate_on_fuse" ) ) {
 			fuse -= timeSinceFire;
 			if ( fuse < 0.0f ) {
@@ -548,9 +548,9 @@ void idProjectile::Think( void ) {
 		}
 
 		// Stop the trail effect if the physics flag was removed
-		if ( flyEffect && flyEffectAttenuateSpeed > 0.0f ) {
+		if ( flyEffect ) {
 			if ( physicsObj.IsAtRest( ) ) {
-				flyEffect->Stop( );
+				flyEffect->Stop(100000);
 				flyEffect = NULL;				
 			} else {
 				float speed;
@@ -801,6 +801,15 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 			}
 			
 			StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL );
+
+
+			if (spawnArgs.GetBool("flash", "0")) {
+				idPlayer* player = gameLocal.GetLocalPlayer();
+				if (player) {
+					player->playerView.Flash(idVec4(0.0f, 0.0f, 0.0f, 1.0f), 1000);
+				}
+			}
+
 
 			float len = velocity.Length();
 			if ( len > BOUNCE_SOUND_MIN_VELOCITY ) {
@@ -1149,7 +1158,7 @@ void idProjectile::Explode( const trace_t *collision, const bool showExplodeFX, 
 	}
 	endpos = ( collision ) ? collision->endpos : GetPhysics()->GetOrigin();
 
-	removeTime = spawnArgs.GetInt( "remove_time", "1500" );
+	removeTime = spawnArgs.GetInt( "remove_time", "1500000" );
 
 	// play sound
 	StopSound( SND_CHANNEL_BODY, false );

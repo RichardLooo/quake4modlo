@@ -8424,7 +8424,29 @@ void idPlayer::PerformImpulse( int impulse ) {
 		SelectWeapon( impulse, false );
 		return;
 	}
-
+	if (g_skill.GetInteger() == 0 && !gameLocal.isMultiplayer && gamestart) {
+		if (impulse == IMPULSE_8) {
+			g_selectedcharacter.SetInteger(0);
+			characterapplied = false;
+			agentSelectOpen = false;
+			gameLocal.Printf("Agent selected: Jett\n");
+			return;
+		}
+		else if (impulse == IMPULSE_9) {
+			g_selectedcharacter.SetInteger(1);
+			characterapplied = false;
+			gamestart = false;
+			gameLocal.Printf("Agent selected: Omen\n");
+			return;
+		}
+		else if (impulse == IMPULSE_0) {
+			g_selectedcharacter.SetInteger(2);
+			characterapplied = false;
+			gamestart = false;
+			gameLocal.Printf("Agent selected: Skye\n");
+			return;
+		}
+	}
 	switch( impulse ) {
 		case IMPULSE_13: {
 			Reload();

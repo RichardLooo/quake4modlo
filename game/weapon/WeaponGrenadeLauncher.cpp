@@ -3,6 +3,9 @@
 
 #include "../Game_local.h"
 #include "../Weapon.h"
+#include "../Projectile.h"
+
+
 
 class rvWeaponGrenadeLauncher : public rvWeapon {
 public:

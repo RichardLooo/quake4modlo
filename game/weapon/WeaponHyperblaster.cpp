@@ -29,7 +29,7 @@ protected:
 	void					SpinDown			( void );
 
 private:
-
+	int tenth;
 	stateResult_t		State_Idle		( const stateParms_t& parms );
 	stateResult_t		State_Fire		( const stateParms_t& parms );
 	stateResult_t		State_Reload	( const stateParms_t& parms );
@@ -56,7 +56,7 @@ rvWeaponHyperblaster::Spawn
 void rvWeaponHyperblaster::Spawn ( void ) {
 	jointBatteryView = viewAnimator->GetJointHandle ( spawnArgs.GetString ( "joint_view_battery" ) );
 	spinning		 = false;
-	
+	tenth = 0;
 	SetState ( "Raise", 0 );	
 }
 
@@ -68,6 +68,7 @@ rvWeaponHyperblaster::Save
 void rvWeaponHyperblaster::Save ( idSaveGame *savefile ) const {
 	savefile->WriteJoint ( jointBatteryView );
 	savefile->WriteBool ( spinning );
+	savefile->WriteInt(tenth);
 }
 
 /*
@@ -78,6 +79,7 @@ rvWeaponHyperblaster::Restore
 void rvWeaponHyperblaster::Restore ( idRestoreGame *savefile ) {
 	savefile->ReadJoint ( jointBatteryView );
 	savefile->ReadBool ( spinning );
+	savefile->ReadInt(tenth);
 }
 
 /*
@@ -229,7 +231,14 @@ stateResult_t rvWeaponHyperblaster::State_Fire ( const stateParms_t& parms ) {
 		case STAGE_INIT:
 			SpinUp ( );
 			nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( PMOD_FIRERATE ));
-			Attack ( false, 1, spread, 0, 1.0f );
+			tenth++;
+			if (tenth >= 10) {
+				Attack(true, 1, 0, 0, 1.0f);
+				tenth = 0;
+			}
+			else {
+				Attack(false, 1, spread, 0, 1.0f);
+			}
 			if ( ClipSize() ) {
 				viewModel->SetShaderParm ( HYPERBLASTER_SPARM_BATTERY, (float)AmmoInClip()/ClipSize() );
 			} else {
