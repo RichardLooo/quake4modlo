@@ -8543,13 +8543,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 //RAVEN END
 
 	switch( impulse ) {
-		case 73:
-			if (hud) {
-				static bool seehelp = false;
-				seehelp = !seehelp;
-				hud->SetStateInt("helpme::visible", seehelp ? 1 : 0);
-			}
-		break;
 		case IMPULSE_13: {
 			Reload();
 			break;
