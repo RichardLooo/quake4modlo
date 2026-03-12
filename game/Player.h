@@ -278,7 +278,7 @@ public:
 	bool   characterapplied;
 	int agentselecttime;
 	bool gamestart;
-	int boonammo;
+	int boonhealth;
 	int boonjump;
 	int boonspeed;
 	int boonrapid;

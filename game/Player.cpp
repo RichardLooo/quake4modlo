@@ -1833,6 +1833,7 @@ void idPlayer::Spawn( void ) {
 	boonspeed = 0;
 	boonrapid = 0;
 	boonarmor = 0;
+	boonhealth = 0;
 	if ( gameLocal.isMultiplayer ) {
 		// always start in spectating state waiting to be spawned in
 		// do this before SetClipModel to get the right bounding box
@@ -2820,6 +2821,14 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 
 	Init();
 
+
+	boonspeed = 0;
+	boonjump = 0;
+	boonrapid = 0;
+	boonhealth = 0;
+	boonarmor = 0;
+	characterapplied = false;
+
 	// Force players to use bounding boxes when in multiplayer
 	if ( gameLocal.isMultiplayer ) {
 		use_combat_bbox = true;
@@ -2984,6 +2993,7 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 
 	lastImpulsePlayer = NULL;
 	lastImpulseTime = 0;
+	agentpicked.SetInteger(0);
 	characterapplied = false;
 	if (g_skill.GetInteger() == 0 && !gameLocal.isMultiplayer) {
 		gamestart = true;
@@ -8533,6 +8543,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 //RAVEN END
 
 	switch( impulse ) {
+		case 73:
+			if (hud) {
+				static bool seehelp = false;
+				seehelp = !seehelp;
+				hud->SetStateInt("helpme::visible", seehelp ? 1 : 0);
+			}
+		break;
 		case IMPULSE_13: {
 			Reload();
 			break;
@@ -9343,6 +9360,29 @@ void idPlayer::Think( void ) {
 		characterapplied = true;
 		ApplyCharacter((agents)agentpicked.GetInteger());
 	}
+
+	if (hud) {
+		hud->SetStateInt("killcount", gameLocal.killcount);
+		int iop = agentpicked.GetInteger();
+		const char* agents[] = { "JETT", "OMEN", "SKYE" };
+		hud->SetStateString("agentname", iop >= 0 && iop <= 2 ? agents[iop] : "");
+		bool actboon = (gameLocal.time < boonspeed || gameLocal.time < boonjump || gameLocal.time < boonrapid || gameLocal.time < boonhealth || gameLocal.time < boonarmor);
+		hud->SetStateInt("boonactive", actboon ? 1 : 0);
+		const char* textbox = "";
+		if (gameLocal.time < boonrapid) textbox = "RAPID FIRE";
+		else if (gameLocal.time < boonspeed) textbox = "SPEED BOOST";
+		else if (gameLocal.time < boonjump) textbox = "JUMP BOOST";
+		else if (gameLocal.time < boonhealth) textbox = "FULL HEALTH";
+		else if (gameLocal.time < boonarmor) textbox = "FULL ARMOR";
+		hud->SetStateString("boontext", textbox);
+
+	}
+
+
+
+
+
+
 	renderEntity_t *headRenderEnt;
 	if ( talkingNPC ) {
 		if ( !talkingNPC.IsValid() ) {

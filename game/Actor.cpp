@@ -2513,28 +2513,30 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 				gameLocal.killcount++;
 				gameLocal.Printf("Kills: %d/5\n", gameLocal.killcount);
 
-				if (gameLocal.killcount % 2 == 0) {
-					idPlayer* p = static_cast<idPlayer*>(attacker);
+				if (gameLocal.killcount % 1 == 0) {
+					idPlayer* gamer = static_cast<idPlayer*>(attacker);
 					int boon = gameLocal.random.RandomInt(5);
 					switch (boon) {
 					case 0:
-						p->health = p->inventory.maxHealth;
+						gamer->boonhealth = gameLocal.time + 5000;
+						gamer->health = gamer->inventory.maxHealth;
 						gameLocal.Printf("BOON: Full Heal!\n");
 						break;
 					case 1:
-						p->inventory.armor = p->inventory.maxarmor;
+						gamer->boonarmor = gameLocal.time + 5000;
+						gamer->inventory.armor = gamer->inventory.maxarmor;
 						gameLocal.Printf("BOON: Full Armor!\n");
 						break;
 					case 2:
-						p->boonspeed = gameLocal.time + 5000;
+						gamer->boonspeed = gameLocal.time + 5000;
 						gameLocal.Printf("BOON: Speed Boost!\n");
 						break;
 					case 3:
-						p->boonjump = gameLocal.time + 5000;
+						gamer->boonjump = gameLocal.time + 5000;
 						gameLocal.Printf("BOON: Jump Boost!\n");
 						break;
 					case 4:
-						p->boonrapid = gameLocal.time + 5000;
+						gamer->boonrapid = gameLocal.time + 5000;
 						gameLocal.Printf("BOON: Rapid Fire!\n");
 						break;
 					}
